@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SmartFlow.Api/SmartFlow.Api.csproj" />
+    <Project Path="src/SmartFlow.Application/SmartFlow.Application.csproj" />
+    <Project Path="src/SmartFlow.Domain/SmartFlow.Domain.csproj" />
+    <Project Path="src/SmartFlow.Infrastructure/SmartFlow.Infrastructure.csproj" />
+  </Folder>
+</Solution>

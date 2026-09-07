@@ -1,0 +1,6 @@
+@SmartFlow.Api_HostAddress = http://localhost:5280
+
+GET {{SmartFlow.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
