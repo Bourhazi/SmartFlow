@@ -9,10 +9,7 @@ public sealed class Comment : BaseEntity
     {
     }
 
-    private Comment(
-        Guid requestId,
-        string content,
-        Guid authorId)
+    private Comment(Guid requestId, string content, Guid authorId)
     {
         RequestId = requestId;
         Content = content;
@@ -35,16 +32,41 @@ public sealed class Comment : BaseEntity
             throw new DomainException("Request identifier is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            throw new DomainException("Comment content is required.");
-        }
-
         if (authorId == Guid.Empty)
         {
             throw new DomainException("Comment author is required.");
         }
 
+        ValidateContent(content);
+
         return new Comment(requestId, content.Trim(), authorId);
+    }
+
+    internal void Update(string content, Guid currentUserId)
+    {
+        if (currentUserId == Guid.Empty || AuthorId != currentUserId)
+        {
+            throw new DomainException(
+                "Only the comment author can modify it.");
+        }
+
+        ValidateContent(content);
+
+        Content = content.Trim();
+        MarkAsUpdated();
+    }
+
+    private static void ValidateContent(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new DomainException("Comment content is required.");
+        }
+
+        if (content.Trim().Length > 2000)
+        {
+            throw new DomainException(
+                "A comment cannot exceed 2000 characters.");
+        }
     }
 }

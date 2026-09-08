@@ -49,13 +49,11 @@ public sealed class Request : BaseEntity
 
     public string? RejectionReason { get; private set; }
 
-    public IReadOnlyCollection<Attachment> Attachments =>
-        _attachments.AsReadOnly();
+    public IReadOnlyCollection<Attachment> Attachments => _attachments.AsReadOnly();
 
-    public IReadOnlyCollection<Comment> Comments =>
-        _comments.AsReadOnly();
+    public IReadOnlyCollection<Comment> Comments => _comments.AsReadOnly();
 
-    public IReadOnlyCollection<ApprovalHistory> ApprovalHistories  =>
+    public IReadOnlyCollection<ApprovalHistory> ApprovalHistories =>
         _approvalHistory.AsReadOnly();
 
     public static Request Create(
@@ -67,15 +65,12 @@ public sealed class Request : BaseEntity
     {
         ValidateTitle(title);
         ValidateDescription(description);
+        ValidatePriority(priority);
+        ValidateDueDate(dueDate);
 
         if (creatorId == Guid.Empty)
         {
             throw new DomainException("Creator identifier is required.");
-        }
-
-        if (dueDate.HasValue && dueDate.Value <= DateTime.UtcNow)
-        {
-            throw new DomainException("Due date must be in the future.");
         }
 
         return new Request(
@@ -98,18 +93,15 @@ public sealed class Request : BaseEntity
 
         ValidateTitle(title);
         ValidateDescription(description);
-
-        if (dueDate.HasValue && dueDate.Value <= DateTime.UtcNow)
-        {
-            throw new DomainException("Due date must be in the future.");
-        }
+        ValidatePriority(priority);
+        ValidateDueDate(dueDate);
 
         Title = title.Trim();
         Description = description.Trim();
         Priority = priority;
         DueDate = dueDate;
 
-        MarkAsUpdated();    
+        MarkAsUpdated();
     }
 
     public void Submit(Guid currentUserId)
@@ -125,6 +117,8 @@ public sealed class Request : BaseEntity
 
     public void AssignManager(Guid managerId, Guid performedById)
     {
+        EnsureNotCompleted();
+
         if (managerId == Guid.Empty)
         {
             throw new DomainException("Manager identifier is required.");
@@ -132,14 +126,7 @@ public sealed class Request : BaseEntity
 
         if (performedById == Guid.Empty)
         {
-            throw new DomainException(
-                "The user performing the action is required.");
-        }
-
-        if (Status is RequestStatus.Approved or RequestStatus.Rejected)
-        {
-            throw new DomainException(
-                "A completed request cannot be reassigned.");
+            throw new DomainException("The user performing the action is required.");
         }
 
         AssignedManagerId = managerId;
@@ -153,7 +140,7 @@ public sealed class Request : BaseEntity
         if (Status != RequestStatus.Submitted)
         {
             throw new DomainException(
-                "Only a submitted request can be reviewed.");
+                "Only a submitted request can be moved to review.");
         }
 
         ChangeStatus(RequestStatus.UnderReview, managerId);
@@ -163,7 +150,7 @@ public sealed class Request : BaseEntity
     public void Approve(Guid managerId, string? decisionComment)
     {
         EnsureAssignedManager(managerId);
-        EnsureCanBeDecided();
+        EnsureUnderReview();
 
         ChangeStatus(
             RequestStatus.Approved,
@@ -176,20 +163,17 @@ public sealed class Request : BaseEntity
         MarkAsUpdated();
     }
 
-    public void Reject(
-        Guid managerId,
-        string rejectionReason)
+    public void Reject(Guid managerId, string rejectionReason)
     {
         EnsureAssignedManager(managerId);
-        EnsureCanBeDecided();
+        EnsureUnderReview();
 
         if (string.IsNullOrWhiteSpace(rejectionReason))
         {
-            throw new DomainException(
-                "A rejection reason is required.");
+            throw new DomainException("A rejection reason is required.");
         }
 
-        if (rejectionReason.Length > 1000)
+        if (rejectionReason.Trim().Length > 1000)
         {
             throw new DomainException(
                 "The rejection reason cannot exceed 1000 characters.");
@@ -213,11 +197,7 @@ public sealed class Request : BaseEntity
         long size,
         Guid uploadedById)
     {
-        if (Status is RequestStatus.Approved or RequestStatus.Rejected)
-        {
-            throw new DomainException(
-                "An attachment cannot be added to a completed request.");
-        }
+        EnsureNotCompleted();
 
         var attachment = Attachment.Create(
             Id,
@@ -233,30 +213,82 @@ public sealed class Request : BaseEntity
         return attachment;
     }
 
-    public Comment AddComment(
-        string content,
-        Guid authorId)
+    public void RemoveAttachment(Guid attachmentId, Guid currentUserId)
     {
-        if (string.IsNullOrWhiteSpace(content))
+        EnsureNotCompleted();
+
+        if (attachmentId == Guid.Empty)
         {
-            throw new DomainException("Comment content is required.");
+            throw new DomainException("Attachment identifier is required.");
         }
 
-        if (content.Length > 2000)
+        var attachment = _attachments.SingleOrDefault(x => x.Id == attachmentId);
+
+        if (attachment is null)
+        {
+            throw new DomainException("Attachment was not found.");
+        }
+
+        if (attachment.UploadedById != currentUserId)
         {
             throw new DomainException(
-                "A comment cannot exceed 2000 characters.");
+                "Only the attachment uploader can remove it.");
         }
 
-        var comment = Comment.Create(
-            Id,
-            content.Trim(),
-            authorId);
+        _attachments.Remove(attachment);
+        MarkAsUpdated();
+    }
+
+    public Comment AddComment(string content, Guid authorId)
+    {
+        EnsureNotCompleted();
+
+        var comment = Comment.Create(Id, content, authorId);
 
         _comments.Add(comment);
         MarkAsUpdated();
 
         return comment;
+    }
+
+    public void UpdateComment(
+        Guid commentId,
+        string content,
+        Guid currentUserId)
+    {
+        EnsureNotCompleted();
+
+        var comment = GetComment(commentId);
+        comment.Update(content, currentUserId);
+
+        MarkAsUpdated();
+    }
+
+    public void RemoveComment(Guid commentId, Guid currentUserId)
+    {
+        EnsureNotCompleted();
+
+        var comment = GetComment(commentId);
+
+        if (comment.AuthorId != currentUserId)
+        {
+            throw new DomainException(
+                "Only the comment author can remove it.");
+        }
+
+        _comments.Remove(comment);
+        MarkAsUpdated();
+    }
+
+    private Comment GetComment(Guid commentId)
+    {
+        if (commentId == Guid.Empty)
+        {
+            throw new DomainException("Comment identifier is required.");
+        }
+
+        return _comments.SingleOrDefault(x => x.Id == commentId)
+            ?? throw new DomainException("Comment was not found.");
     }
 
     private void ChangeStatus(
@@ -277,7 +309,7 @@ public sealed class Request : BaseEntity
 
     private void EnsureOwner(Guid currentUserId)
     {
-        if (CreatorId != currentUserId)
+        if (currentUserId == Guid.Empty || CreatorId != currentUserId)
         {
             throw new DomainException(
                 "Only the request creator can perform this action.");
@@ -293,9 +325,19 @@ public sealed class Request : BaseEntity
         }
     }
 
+    private void EnsureUnderReview()
+    {
+        if (Status != RequestStatus.UnderReview)
+        {
+            throw new DomainException(
+                "Only a request under review can be approved or rejected.");
+        }
+    }
+
     private void EnsureAssignedManager(Guid managerId)
     {
-        if (!AssignedManagerId.HasValue ||
+        if (managerId == Guid.Empty ||
+            !AssignedManagerId.HasValue ||
             AssignedManagerId.Value != managerId)
         {
             throw new DomainException(
@@ -303,13 +345,12 @@ public sealed class Request : BaseEntity
         }
     }
 
-    private void EnsureCanBeDecided()
+    private void EnsureNotCompleted()
     {
-        if (Status is not RequestStatus.Submitted
-            and not RequestStatus.UnderReview)
+        if (Status is RequestStatus.Approved or RequestStatus.Rejected)
         {
             throw new DomainException(
-                "This request cannot be approved or rejected.");
+                "A completed request cannot be modified.");
         }
     }
 
@@ -320,7 +361,7 @@ public sealed class Request : BaseEntity
             throw new DomainException("Request title is required.");
         }
 
-        if (title.Length > 150)
+        if (title.Trim().Length > 150)
         {
             throw new DomainException(
                 "Request title cannot exceed 150 characters.");
@@ -331,14 +372,29 @@ public sealed class Request : BaseEntity
     {
         if (string.IsNullOrWhiteSpace(description))
         {
-            throw new DomainException(
-                "Request description is required.");
+            throw new DomainException("Request description is required.");
         }
 
-        if (description.Length > 3000)
+        if (description.Trim().Length > 3000)
         {
             throw new DomainException(
                 "Request description cannot exceed 3000 characters.");
+        }
+    }
+
+    private static void ValidatePriority(RequestPriority priority)
+    {
+        if (!Enum.IsDefined(priority))
+        {
+            throw new DomainException("Request priority is invalid.");
+        }
+    }
+
+    private static void ValidateDueDate(DateTime? dueDate)
+    {
+        if (dueDate.HasValue && dueDate.Value <= DateTime.UtcNow)
+        {
+            throw new DomainException("Due date must be in the future.");
         }
     }
 }

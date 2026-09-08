@@ -1,0 +1,32 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    name: Build and test .NET backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore SmartFlow.slnx
+
+      - name: Build solution
+        run: dotnet build SmartFlow.slnx --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test SmartFlow.slnx --configuration Release --no-build
