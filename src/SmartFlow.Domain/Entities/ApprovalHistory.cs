@@ -3,7 +3,7 @@ using SmartFlow.Domain.Enums;
 using SmartFlow.Domain.Exceptions;
 
 namespace SmartFlow.Domain.Entities;
-
+// APPROVAL HISTORY
 public sealed class ApprovalHistory : BaseEntity
 {
     private ApprovalHistory()
