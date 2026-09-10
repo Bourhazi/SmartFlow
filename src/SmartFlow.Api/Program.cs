@@ -1,6 +1,7 @@
 using SmartFlow.Application;
 using SmartFlow.Infrastructure;
 using SmartFlow.Api.Middlewares;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi;
 
@@ -13,7 +14,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(
-            new JsonStringEnumConverter());
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
     });
 
 builder.Services.AddOpenApi();
@@ -64,3 +65,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program
+{
+}
