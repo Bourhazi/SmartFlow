@@ -27,4 +27,24 @@ public sealed class RequestRepository(
                 request => request.Id == requestId,
                 cancellationToken);
     }
+
+    public async Task<Request?> GetForUpdateAsync(
+    Guid requestId,
+    uint expectedVersion,
+    CancellationToken cancellationToken)
+    {
+        var request = await dbContext.Requests
+            .SingleOrDefaultAsync(
+                request => request.Id == requestId,
+                cancellationToken);
+
+        if (request is not null)
+        {
+            dbContext.Entry(request)
+                .Property(entity => entity.Version)
+                .OriginalValue = expectedVersion;
+        }
+
+        return request;
+    }
 }

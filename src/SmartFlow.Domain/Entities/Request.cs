@@ -49,6 +49,8 @@ public sealed class Request : BaseEntity
 
     public string? RejectionReason { get; private set; }
 
+    public uint Version { get; private set; }
+
     public IReadOnlyCollection<Attachment> Attachments => _attachments.AsReadOnly();
 
     public IReadOnlyCollection<Comment> Comments => _comments.AsReadOnly();

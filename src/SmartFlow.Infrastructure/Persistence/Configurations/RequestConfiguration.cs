@@ -58,8 +58,8 @@ public sealed class RequestConfiguration : IEntityTypeConfiguration<Request>
         // Propriété invisible dans Domain, mappée sur la colonne système PostgreSQL xmin.
         // EF Core lèvera une DbUpdateConcurrencyException si deux mises à jour
         // concurrentes tentent de modifier la même demande.
-        builder.Property<uint>("Version")
-            .IsRowVersion();
+        builder.Property(request => request.Version)
+        .IsRowVersion();
 
         builder.HasIndex(request => request.CreatorId);
 

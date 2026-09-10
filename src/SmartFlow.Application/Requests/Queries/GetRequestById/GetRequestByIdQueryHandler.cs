@@ -35,6 +35,7 @@ public sealed class GetRequestByIdQueryHandler(
             request.RejectionReason,
             request.CreatedAtUtc,
             request.UpdatedAtUtc,
+            request.Version,
             request.Attachments
                 .Select(attachment => new AttachmentDto(
                     attachment.Id,

@@ -16,6 +16,7 @@ public sealed record RequestDetailsDto(
     string? RejectionReason,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
+    uint Version,
     IReadOnlyCollection<AttachmentDto> Attachments,
     IReadOnlyCollection<CommentDto> Comments,
     IReadOnlyCollection<ApprovalHistoryDto> ApprovalHistories);

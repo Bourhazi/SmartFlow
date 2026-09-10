@@ -9,4 +9,8 @@ public interface IRequestRepository
     Task<Request?> GetByIdAsync(
         Guid requestId,
         CancellationToken cancellationToken);
+    Task<Request?> GetForUpdateAsync(
+    Guid requestId,
+    uint expectedVersion,
+    CancellationToken cancellationToken);
 } 
