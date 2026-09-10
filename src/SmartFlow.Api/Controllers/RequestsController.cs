@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SmartFlow.Api.Contracts.Requests;
 using SmartFlow.Application.Requests.Commands.CreateRequest;
+using SmartFlow.Application.Requests.Queries.GetRequestById;
 
 namespace SmartFlow.Api.Controllers;
 
@@ -27,8 +28,23 @@ public sealed class RequestsController(ISender sender) : ControllerBase
 
         var requestId = await sender.Send(command, cancellationToken);
 
-        return Created(
-            $"/api/requests/{requestId}",
+        return CreatedAtAction(
+            nameof(GetById),
+            new { requestId },
             new { id = requestId });
+    }
+
+    [HttpGet("{requestId:guid}")]
+    [ProducesResponseType<RequestDetailsDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RequestDetailsDto>> GetById(
+        Guid requestId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetRequestByIdQuery(requestId);
+
+        var request = await sender.Send(query, cancellationToken);
+
+        return request is null ? NotFound() : Ok(request);
     }
 }
