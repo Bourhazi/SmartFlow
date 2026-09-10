@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using SmartFlow.Domain.Entities;
+using SmartFlow.Application.Common.Interfaces;
 
 namespace SmartFlow.Infrastructure.Persistence;
 
 public sealed class SmartFlowDbContext(
     DbContextOptions<SmartFlowDbContext> options)
-    : DbContext(options)
+    : DbContext(options), IUnitOfWork
 {
     public DbSet<Request> Requests => Set<Request>();
 

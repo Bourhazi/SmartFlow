@@ -1,29 +1,60 @@
-using Microsoft.EntityFrameworkCore;
-using SmartFlow.Infrastructure.Persistence;
+using SmartFlow.Application;
+using SmartFlow.Infrastructure;
+using SmartFlow.Api.Middlewares;
+using System.Text.Json.Serialization;
+using Microsoft.OpenApi;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter());
+    });
 
 builder.Services.AddOpenApi();
 
-var connectionString = builder.Configuration.GetConnectionString(
-    "DefaultConnection");
-
-if (string.IsNullOrWhiteSpace(connectionString))
+builder.Services.AddSwaggerGen(options =>
 {
-    throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' is not configured.");
-}
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SmartFlow API",
+        Version = "v1",
+        Description = "API for business requests and approval workflows."
+    });
+});
 
-builder.Services.AddDbContext<SmartFlowDbContext>(options =>
-    options.UseNpgsql(connectionString));
+
+
+builder.Services.AddProblemDetails();
+
+builder.Services.AddApplication();
+
+builder.Services.AddInfrastructure(builder.Configuration);
+
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    app.UseSwagger();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint(
+            "/swagger/v1/swagger.json",
+            "SmartFlow API v1");
+
+        options.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
