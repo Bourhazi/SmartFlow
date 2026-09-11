@@ -6,6 +6,7 @@
     <Project Path="src/SmartFlow.Infrastructure/SmartFlow.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/SmartFlow.Api.IntegrationTests/SmartFlow.Api.IntegrationTests.csproj" />
     <Project Path="tests/SmartFlow.Domain.Tests/SmartFlow.Domain.Tests.csproj" />
   </Folder>
 </Solution>
