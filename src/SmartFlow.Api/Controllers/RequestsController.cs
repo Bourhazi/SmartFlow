@@ -4,6 +4,8 @@ using SmartFlow.Api.Contracts.Requests;
 using SmartFlow.Application.Requests.Commands.CreateRequest;
 using SmartFlow.Application.Requests.Queries.GetRequestById;
 using SmartFlow.Application.Requests.Commands.UpdateRequest;
+using SmartFlow.Application.Requests.Commands.SubmitRequest;
+using SmartFlow.Application.Requests.Commands.AssignManager;
 
 namespace SmartFlow.Api.Controllers;
 
@@ -75,5 +77,50 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var request = await sender.Send(query, cancellationToken);
 
         return request is null ? NotFound() : Ok(request);
+    }
+
+
+
+    [HttpPost("{requestId:guid}/submit")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Submit(
+        Guid requestId,
+        SubmitRequestRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SubmitRequestCommand(
+            requestId,
+            request.CurrentUserId,
+            request.Version);
+
+        var wasSubmitted = await sender.Send(command, cancellationToken);
+
+        return wasSubmitted ? NoContent() : NotFound();
+    }
+
+
+
+    [HttpPost("{requestId:guid}/assign-manager")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AssignManager(
+        Guid requestId,
+        AssignManagerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AssignManagerCommand(
+            requestId,
+            request.ManagerId,
+            request.PerformedById,
+            request.Version);
+
+        var wasAssigned = await sender.Send(command, cancellationToken);
+
+        return wasAssigned ? NoContent() : NotFound();
     }
 }
