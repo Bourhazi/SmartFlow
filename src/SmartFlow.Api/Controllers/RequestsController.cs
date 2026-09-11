@@ -6,8 +6,10 @@ using SmartFlow.Application.Requests.Queries.GetRequestById;
 using SmartFlow.Application.Requests.Commands.UpdateRequest;
 using SmartFlow.Application.Requests.Commands.SubmitRequest;
 using SmartFlow.Application.Requests.Commands.AssignManager;
-
+using SmartFlow.Application.Requests.Commands.StartReview;
 namespace SmartFlow.Api.Controllers;
+using SmartFlow.Application.Requests.Commands.ApproveRequest;
+using SmartFlow.Application.Requests.Commands.RejectRequest;
 
 [ApiController]
 [Route("api/requests")]
@@ -122,5 +124,69 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var wasAssigned = await sender.Send(command, cancellationToken);
 
         return wasAssigned ? NoContent() : NotFound();
+    }
+
+    
+    [HttpPost("{requestId:guid}/start-review")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> StartReview(
+        Guid requestId,
+        StartReviewRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new StartReviewCommand(
+            requestId,
+            request.ManagerId,
+            request.Version);
+
+        var wasStarted = await sender.Send(command, cancellationToken);
+
+        return wasStarted ? NoContent() : NotFound();
+    }
+
+
+    [HttpPost("{requestId:guid}/approve")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Approve(
+        Guid requestId,
+        ApproveRequestRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new ApproveRequestCommand(
+            requestId,
+            request.ManagerId,
+            request.DecisionComment,
+            request.Version);
+
+        var wasApproved = await sender.Send(command, cancellationToken);
+
+        return wasApproved ? NoContent() : NotFound();
+    }
+
+    [HttpPost("{requestId:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Reject(
+        Guid requestId,
+        RejectRequestRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new RejectRequestCommand(
+            requestId,
+            request.ManagerId,
+            request.RejectionReason,
+            request.Version);
+
+        var wasRejected = await sender.Send(command, cancellationToken);
+
+        return wasRejected ? NoContent() : NotFound();
     }
 }
