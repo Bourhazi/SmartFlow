@@ -34,6 +34,7 @@ public sealed class RequestRepository(
     CancellationToken cancellationToken)
     {
         var request = await dbContext.Requests
+            .Include(request => request.Attachments)
             .Include(request => request.Comments)
             .SingleOrDefaultAsync(
                 request => request.Id == requestId,

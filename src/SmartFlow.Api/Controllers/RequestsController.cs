@@ -13,6 +13,10 @@ using SmartFlow.Application.Requests.Commands.RejectRequest;
 using SmartFlow.Application.Requests.Commands.AddComment;
 using SmartFlow.Application.Requests.Commands.UpdateComment;
 using SmartFlow.Application.Requests.Commands.RemoveComment;
+using SmartFlow.Application.Requests.Commands.UploadAttachment;
+using SmartFlow.Application.Requests.Commands.RemoveAttachment;
+using SmartFlow.Application.Requests.Queries.DownloadAttachment;
+
 
 [ApiController]
 [Route("api/requests")]
@@ -256,6 +260,91 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var command = new RemoveCommentCommand(
             requestId,
             commentId,
+            request.CurrentUserId,
+            request.Version);
+
+        var wasRemoved = await sender.Send(command, cancellationToken);
+
+        return wasRemoved ? NoContent() : NotFound();
+    }
+
+
+    [HttpPost("{requestId:guid}/attachments")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UploadAttachment(
+        Guid requestId,
+        [FromForm] UploadAttachmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.File is null || request.File.Length == 0)
+        {
+            return BadRequest(new
+            {
+                title = "Invalid file",
+                detail = "A non-empty file is required."
+            });
+        }
+
+        await using var content = request.File.OpenReadStream();
+
+        var command = new UploadAttachmentCommand(
+            requestId,
+            request.File.FileName,
+            request.File.ContentType,
+            request.File.Length,
+            content,
+            request.UploadedById,
+            request.Version);
+
+        var attachmentId = await sender.Send(command, cancellationToken);
+
+        return attachmentId.HasValue
+            ? Created(
+                $"/api/requests/{requestId}/attachments/{attachmentId.Value}/download",
+                new { id = attachmentId.Value })
+            : NotFound();
+    }
+
+    [HttpGet("{requestId:guid}/attachments/{attachmentId:guid}/download")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadAttachment(
+        Guid requestId,
+        Guid attachmentId,
+        CancellationToken cancellationToken)
+    {
+        var query = new DownloadAttachmentQuery(
+            requestId,
+            attachmentId);
+
+        var attachment = await sender.Send(query, cancellationToken);
+
+        return attachment is null
+            ? NotFound()
+            : File(
+                attachment.Content,
+                attachment.ContentType,
+                attachment.OriginalFileName);
+    }
+
+    [HttpDelete("{requestId:guid}/attachments/{attachmentId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RemoveAttachment(
+        Guid requestId,
+        Guid attachmentId,
+        [FromBody] RemoveAttachmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new RemoveAttachmentCommand(
+            requestId,
+            attachmentId,
             request.CurrentUserId,
             request.Version);
 
