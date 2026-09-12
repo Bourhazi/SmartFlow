@@ -34,6 +34,7 @@ public sealed class RequestRepository(
     CancellationToken cancellationToken)
     {
         var request = await dbContext.Requests
+            .Include(request => request.Comments)
             .SingleOrDefaultAsync(
                 request => request.Id == requestId,
                 cancellationToken);
@@ -44,6 +45,7 @@ public sealed class RequestRepository(
                 .Property(entity => entity.Version)
                 .OriginalValue = expectedVersion;
         }
+        
 
         return request;
     }

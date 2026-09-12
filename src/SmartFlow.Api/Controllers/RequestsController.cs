@@ -10,6 +10,9 @@ using SmartFlow.Application.Requests.Commands.StartReview;
 namespace SmartFlow.Api.Controllers;
 using SmartFlow.Application.Requests.Commands.ApproveRequest;
 using SmartFlow.Application.Requests.Commands.RejectRequest;
+using SmartFlow.Application.Requests.Commands.AddComment;
+using SmartFlow.Application.Requests.Commands.UpdateComment;
+using SmartFlow.Application.Requests.Commands.RemoveComment;
 
 [ApiController]
 [Route("api/requests")]
@@ -188,5 +191,76 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var wasRejected = await sender.Send(command, cancellationToken);
 
         return wasRejected ? NoContent() : NotFound();
+    }
+
+
+    [HttpPost("{requestId:guid}/comments")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AddComment(
+        Guid requestId,
+        AddCommentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new AddCommentCommand(
+            requestId,
+            request.Content,
+            request.AuthorId,
+            request.Version);
+
+        var commentId = await sender.Send(command, cancellationToken);
+
+        return commentId.HasValue
+            ? Created(
+                $"/api/requests/{requestId}",
+                new { id = commentId.Value })
+            : NotFound();
+    }
+
+    [HttpPut("{requestId:guid}/comments/{commentId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateComment(
+        Guid requestId,
+        Guid commentId,
+        UpdateCommentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateCommentCommand(
+            requestId,
+            commentId,
+            request.Content,
+            request.CurrentUserId,
+            request.Version);
+
+        var wasUpdated = await sender.Send(command, cancellationToken);
+
+        return wasUpdated ? NoContent() : NotFound();
+    }
+
+    [HttpDelete("{requestId:guid}/comments/{commentId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RemoveComment(
+        Guid requestId,
+        Guid commentId,
+        [FromBody] RemoveCommentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new RemoveCommentCommand(
+            requestId,
+            commentId,
+            request.CurrentUserId,
+            request.Version);
+
+        var wasRemoved = await sender.Send(command, cancellationToken);
+
+        return wasRemoved ? NoContent() : NotFound();
     }
 }
