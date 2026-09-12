@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Infrastructure.Persistence;
 using SmartFlow.Infrastructure.Persistence.Repositories;
+using SmartFlow.Infrastructure.Persistence.Queries;
 
 using SmartFlow.Infrastructure.FileStorage;
 
@@ -46,6 +47,9 @@ public static class DependencyInjection
 
             return new LocalFileStorage(rootPath);
         });
+
+        services.AddScoped<IRequestReadService, RequestReadService>();
+
         return services;
     }
 }

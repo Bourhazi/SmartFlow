@@ -16,6 +16,8 @@ using SmartFlow.Application.Requests.Commands.RemoveComment;
 using SmartFlow.Application.Requests.Commands.UploadAttachment;
 using SmartFlow.Application.Requests.Commands.RemoveAttachment;
 using SmartFlow.Application.Requests.Queries.DownloadAttachment;
+using SmartFlow.Application.Common.Models;
+using SmartFlow.Application.Requests.Queries.GetRequests;
 
 
 [ApiController]
@@ -71,6 +73,32 @@ public sealed class RequestsController(ISender sender) : ControllerBase
 
         return wasUpdated ? NoContent() : NotFound();
     }
+
+
+    [HttpGet]
+    [ProducesResponseType<PagedResult<RequestListItemDto>>(
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<RequestListItemDto>>> GetList(
+        [FromQuery] GetRequestsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetRequestsQuery(
+            request.Page,
+            request.PageSize,
+            request.Status,
+            request.Priority,
+            request.CreatorId,
+            request.ManagerId,
+            request.Search,
+            request.SortBy,
+            request.SortDirection);
+
+        var result = await sender.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
 
 
 
