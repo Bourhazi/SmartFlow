@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SmartFlow.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using SmartFlow.Infrastructure.Persistence;
 namespace SmartFlow.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SmartFlowDbContext))]
-    partial class SmartFlowDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913194426_AddIdentity")]
+    partial class AddIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

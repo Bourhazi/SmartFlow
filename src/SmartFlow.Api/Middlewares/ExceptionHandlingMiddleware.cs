@@ -41,6 +41,9 @@ public sealed class ExceptionHandlingMiddleware(
             cancellationToken: context.RequestAborted);
     }
 
+
+
+
     private static ProblemDetails CreateProblemDetails(
         HttpContext context,
         Exception exception)
@@ -49,6 +52,21 @@ public sealed class ExceptionHandlingMiddleware(
         {
             ValidationException validationException =>
                 CreateValidationProblemDetails(context, validationException),
+            UnauthorizedAccessException =>
+            CreateProblemDetails(
+                context,
+                StatusCodes.Status401Unauthorized,
+                "Authentication failed",
+                "Email or password is invalid."),
+
+
+            InvalidOperationException invalidOperationException =>
+            CreateProblemDetails(
+                context,
+                StatusCodes.Status400BadRequest,
+                "Operation failed",
+                invalidOperationException.Message),
+
 
             DomainException domainException =>
                 CreateProblemDetails(
