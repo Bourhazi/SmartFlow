@@ -10,9 +10,6 @@ public sealed class StartReviewCommandValidator
         RuleFor(command => command.RequestId)
             .NotEmpty();
 
-        RuleFor(command => command.ManagerId)
-            .NotEmpty();
-
         RuleFor(command => command.Version)
             .Must(version => version > 0)
             .WithMessage("Version must be greater than zero.");

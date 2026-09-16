@@ -6,5 +6,4 @@ public sealed record UpdateCommentCommand(
     Guid RequestId,
     Guid CommentId,
     string Content,
-    Guid CurrentUserId,
     uint Version) : IRequest<bool>;

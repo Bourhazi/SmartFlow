@@ -9,5 +9,4 @@ public sealed record UpdateRequestCommand(
     string Description,
     RequestPriority Priority,
     DateTime? DueDate,
-    Guid CurrentUserId,
     uint Version) : IRequest<bool>;

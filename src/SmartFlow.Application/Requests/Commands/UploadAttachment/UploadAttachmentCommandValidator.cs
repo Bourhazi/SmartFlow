@@ -22,9 +22,6 @@ public sealed class UploadAttachmentCommandValidator
             .GreaterThan(0)
             .LessThanOrEqualTo(5 * 1024 * 1024);
 
-        RuleFor(command => command.UploadedById)
-            .NotEmpty();
-
         RuleFor(command => command.Version)
             .Must(version => version > 0)
             .WithMessage("Version must be greater than zero.");

@@ -13,8 +13,6 @@ public sealed class RemoveAttachmentCommandValidator
         RuleFor(command => command.AttachmentId)
             .NotEmpty();
 
-        RuleFor(command => command.CurrentUserId)
-            .NotEmpty();
 
         RuleFor(command => command.Version)
             .Must(version => version > 0)

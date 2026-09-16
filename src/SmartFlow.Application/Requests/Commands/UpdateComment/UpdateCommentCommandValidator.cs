@@ -17,8 +17,6 @@ public sealed class UpdateCommentCommandValidator
             .NotEmpty()
             .MaximumLength(2000);
 
-        RuleFor(command => command.CurrentUserId)
-            .NotEmpty();
 
         RuleFor(command => command.Version)
             .Must(version => version > 0)

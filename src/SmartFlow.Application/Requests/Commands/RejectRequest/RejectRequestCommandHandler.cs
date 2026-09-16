@@ -1,11 +1,13 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.RejectRequest;
 
 public sealed class RejectRequestCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser)
     : IRequestHandler<RejectRequestCommand, bool>
 {
     public async Task<bool> Handle(
@@ -23,7 +25,7 @@ public sealed class RejectRequestCommandHandler(
         }
 
         request.Reject(
-            command.ManagerId,
+            currentUser.UserId,
             command.RejectionReason);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

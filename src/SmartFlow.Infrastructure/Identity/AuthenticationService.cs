@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SmartFlow.Application.Authentication;
 using SmartFlow.Application.Common.Models;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Infrastructure.Identity;
 
@@ -50,7 +51,7 @@ public sealed class AuthenticationService(
             throw new InvalidOperationException(errors);
         }
 
-        await userManager.AddToRoleAsync(user, AppRoles.Collaborateur);
+        await userManager.AddToRoleAsync(user, Roles.Collaborateur);
 
         return await CreateAuthResultAsync(user);
     }

@@ -1,11 +1,13 @@
     using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.ApproveRequest;
 
 public sealed class ApproveRequestCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser)
     : IRequestHandler<ApproveRequestCommand, bool>
 {
     public async Task<bool> Handle(
@@ -23,7 +25,7 @@ public sealed class ApproveRequestCommandHandler(
         }
 
         request.Approve(
-            command.ManagerId,
+            currentUser.UserId,
             command.DecisionComment);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

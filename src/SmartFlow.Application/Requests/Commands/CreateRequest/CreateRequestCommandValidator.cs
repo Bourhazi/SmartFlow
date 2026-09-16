@@ -18,8 +18,7 @@ public sealed class CreateRequestCommandValidator
         RuleFor(command => command.Priority)
             .IsInEnum();
 
-        RuleFor(command => command.CreatorId)
-            .NotEmpty();
+
 
         RuleFor(command => command.DueDate)
             .GreaterThan(DateTime.UtcNow)

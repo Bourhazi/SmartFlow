@@ -1,11 +1,13 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.RemoveComment;
 
 public sealed class RemoveCommentCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser)
     : IRequestHandler<RemoveCommentCommand, bool>
 {
     public async Task<bool> Handle(
@@ -24,7 +26,7 @@ public sealed class RemoveCommentCommandHandler(
 
         request.RemoveComment(
             command.CommentId,
-            command.CurrentUserId);
+            currentUser.UserId);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -1,11 +1,13 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.StartReview;
 
 public sealed class StartReviewCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser)
     : IRequestHandler<StartReviewCommand, bool>
 {
     public async Task<bool> Handle(
@@ -22,7 +24,7 @@ public sealed class StartReviewCommandHandler(
             return false;
         }
 
-        request.StartReview(command.ManagerId);
+        request.StartReview(currentUser.UserId);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

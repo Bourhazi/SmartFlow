@@ -13,9 +13,6 @@ public sealed class RemoveCommentCommandValidator
         RuleFor(command => command.CommentId)
             .NotEmpty();
 
-        RuleFor(command => command.CurrentUserId)
-            .NotEmpty();
-
         RuleFor(command => command.Version)
             .Must(version => version > 0)
             .WithMessage("Version must be greater than zero.");

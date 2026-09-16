@@ -1,5 +1,3 @@
 namespace SmartFlow.Api.Contracts.Requests;
 
-public sealed record RemoveCommentRequest(
-    Guid CurrentUserId,
-    uint Version);
+public sealed record RemoveCommentRequest(uint Version);

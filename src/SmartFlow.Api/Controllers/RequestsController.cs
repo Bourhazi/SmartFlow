@@ -18,8 +18,10 @@ using SmartFlow.Application.Requests.Commands.RemoveAttachment;
 using SmartFlow.Application.Requests.Queries.DownloadAttachment;
 using SmartFlow.Application.Common.Models;
 using SmartFlow.Application.Requests.Queries.GetRequests;
+using Microsoft.AspNetCore.Authorization;
 
 
+[Authorize]
 [ApiController]
 [Route("api/requests")]
 public sealed class RequestsController(ISender sender) : ControllerBase
@@ -37,8 +39,7 @@ public sealed class RequestsController(ISender sender) : ControllerBase
             request.Title,
             request.Description,
             request.Priority,
-            request.DueDate,
-            request.CreatorId);
+            request.DueDate);
 
         var requestId = await sender.Send(command, cancellationToken);
 
@@ -66,7 +67,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
             request.Description,
             request.Priority,
             request.DueDate,
-            request.CurrentUserId,
             request.Version);
 
         var wasUpdated = await sender.Send(command, cancellationToken);
@@ -130,7 +130,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
     {
         var command = new SubmitRequestCommand(
             requestId,
-            request.CurrentUserId,
             request.Version);
 
         var wasSubmitted = await sender.Send(command, cancellationToken);
@@ -153,7 +152,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var command = new AssignManagerCommand(
             requestId,
             request.ManagerId,
-            request.PerformedById,
             request.Version);
 
         var wasAssigned = await sender.Send(command, cancellationToken);
@@ -174,7 +172,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
     {
         var command = new StartReviewCommand(
             requestId,
-            request.ManagerId,
             request.Version);
 
         var wasStarted = await sender.Send(command, cancellationToken);
@@ -195,7 +192,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
     {
         var command = new ApproveRequestCommand(
             requestId,
-            request.ManagerId,
             request.DecisionComment,
             request.Version);
 
@@ -216,7 +212,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
     {
         var command = new RejectRequestCommand(
             requestId,
-            request.ManagerId,
             request.RejectionReason,
             request.Version);
 
@@ -239,7 +234,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var command = new AddCommentCommand(
             requestId,
             request.Content,
-            request.AuthorId,
             request.Version);
 
         var commentId = await sender.Send(command, cancellationToken);
@@ -266,7 +260,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
             requestId,
             commentId,
             request.Content,
-            request.CurrentUserId,
             request.Version);
 
         var wasUpdated = await sender.Send(command, cancellationToken);
@@ -288,7 +281,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var command = new RemoveCommentCommand(
             requestId,
             commentId,
-            request.CurrentUserId,
             request.Version);
 
         var wasRemoved = await sender.Send(command, cancellationToken);
@@ -325,7 +317,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
             request.File.ContentType,
             request.File.Length,
             content,
-            request.UploadedById,
             request.Version);
 
         var attachmentId = await sender.Send(command, cancellationToken);
@@ -373,7 +364,6 @@ public sealed class RequestsController(ISender sender) : ControllerBase
         var command = new RemoveAttachmentCommand(
             requestId,
             attachmentId,
-            request.CurrentUserId,
             request.Version);
 
         var wasRemoved = await sender.Send(command, cancellationToken);

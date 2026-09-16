@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Domain.Entities;
 using SmartFlow.Infrastructure.Identity;
-
+using ApplicationRoles = SmartFlow.Application.Common.Security.Roles;
 namespace SmartFlow.Infrastructure.Persistence;
 
 public sealed class SmartFlowDbContext(
@@ -37,13 +37,13 @@ public sealed class SmartFlowDbContext(
         modelBuilder.Entity<IdentityRole<Guid>>().HasData(
         CreateRole(
             new Guid("11111111-1111-1111-1111-111111111111"),
-            AppRoles.Collaborateur),
+            ApplicationRoles.Collaborateur),
         CreateRole(
             new Guid("22222222-2222-2222-2222-222222222222"),
-            AppRoles.Manager),
+            ApplicationRoles.Manager),
         CreateRole(
             new Guid("33333333-3333-3333-3333-333333333333"),
-            AppRoles.Administrateur));
+            ApplicationRoles.Administrateur));
     }
 
     private static IdentityRole<Guid> CreateRole(

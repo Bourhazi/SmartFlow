@@ -9,10 +9,7 @@ public sealed class ApproveRequestCommandValidator
     {
         RuleFor(command => command.RequestId)
             .NotEmpty();
-
-        RuleFor(command => command.ManagerId)
-            .NotEmpty();
-
+            
         RuleFor(command => command.DecisionComment)
             .MaximumLength(1000)
             .When(command => !string.IsNullOrWhiteSpace(

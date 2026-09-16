@@ -1,12 +1,14 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.UploadAttachment;
 
 public sealed class UploadAttachmentCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
-    IFileStorage fileStorage)
+    IFileStorage fileStorage,
+    ICurrentUser currentUser)
     : IRequestHandler<UploadAttachmentCommand, Guid?>
 {
     public async Task<Guid?> Handle(
@@ -37,7 +39,7 @@ public sealed class UploadAttachmentCommandHandler(
                 storageFileName,
                 command.ContentType,
                 command.Size,
-                command.UploadedById);
+                currentUser.UserId);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
 

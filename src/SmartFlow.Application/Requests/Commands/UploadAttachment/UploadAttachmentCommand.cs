@@ -8,5 +8,4 @@ public sealed record UploadAttachmentCommand(
     string ContentType,
     long Size,
     Stream Content,
-    Guid UploadedById,
     uint Version) : IRequest<Guid?>;

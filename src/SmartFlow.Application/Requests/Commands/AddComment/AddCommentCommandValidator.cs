@@ -14,9 +14,6 @@ public sealed class AddCommentCommandValidator
             .NotEmpty()
             .MaximumLength(2000);
 
-        RuleFor(command => command.AuthorId)
-            .NotEmpty();
-
         RuleFor(command => command.Version)
             .Must(version => version > 0)
             .WithMessage("Version must be greater than zero.");

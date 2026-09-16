@@ -1,11 +1,14 @@
 using MediatR;
+using SmartFlow.Application.Common.Exceptions;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.AssignManager;
 
 public sealed class AssignManagerCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser)
     : IRequestHandler<AssignManagerCommand, bool>
 {
     public async Task<bool> Handle(
@@ -21,10 +24,14 @@ public sealed class AssignManagerCommandHandler(
         {
             return false;
         }
-
+        if (!currentUser.IsInRole(Roles.Administrateur))
+        {
+            throw new ForbiddenAccessException(
+                "Only an administrator can assign a manager.");
+}
         request.AssignManager(
             command.ManagerId,
-            command.PerformedById);
+            currentUser.UserId);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

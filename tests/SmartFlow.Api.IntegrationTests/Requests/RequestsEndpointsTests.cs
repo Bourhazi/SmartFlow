@@ -2,7 +2,11 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using SmartFlow.Api.IntegrationTests.Infrastructure;
+using SmartFlow.Application.Common.Security;
+using SmartFlow.Infrastructure.Identity;
 
 namespace SmartFlow.Api.IntegrationTests.Requests;
 
@@ -11,21 +15,15 @@ public sealed class RequestsEndpointsTests(
     SmartFlowApiFactory factory)
     : IClassFixture<SmartFlowApiFactory>
 {
-    private static readonly Guid CreatorId =
-        Guid.Parse("11111111-1111-1111-1111-111111111111");
-
-    private static readonly Guid ManagerId =
-        Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-    private static readonly Guid OtherUserId =
-        Guid.Parse("33333333-3333-3333-3333-333333333333");
-
     [Fact]
     public async Task CreateThenGet_ValidRequest_ReturnsCreatedDraft()
     {
         await factory.ResetDatabaseAsync();
 
-        using var client = factory.CreateClient();
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        using var client = creator.Client;
 
         var requestId = await CreateDraftAsync(
             client,
@@ -35,7 +33,7 @@ public sealed class RequestsEndpointsTests(
 
         Assert.Equal("Purchase a laptop", request.Title);
         Assert.Equal("draft", request.Status);
-        Assert.Equal(CreatorId, request.CreatorId);
+        Assert.Equal(creator.UserId, request.CreatorId);
         Assert.True(request.Version > 0);
         Assert.Empty(request.Comments);
         Assert.Empty(request.Attachments);
@@ -46,49 +44,59 @@ public sealed class RequestsEndpointsTests(
     {
         await factory.ResetDatabaseAsync();
 
-        using var client = factory.CreateClient();
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        var manager = await CreateAuthenticatedUserAsync(
+            Roles.Manager);
+
+        var administrator = await CreateAuthenticatedUserAsync(
+            Roles.Administrateur);
+
+        using var creatorClient = creator.Client;
+        using var managerClient = manager.Client;
+        using var administratorClient = administrator.Client;
 
         var requestId = await CreateDraftAsync(
-            client,
+            creatorClient,
             "Purchase a laptop");
 
-        var request = await GetRequestAsync(client, requestId);
+        var request = await GetRequestAsync(
+            creatorClient,
+            requestId);
 
         using var submitResponse = await PostJsonAsync(
-            client,
+            creatorClient,
             $"/api/requests/{requestId}/submit",
             $$"""
             {
-              "currentUserId": "{{CreatorId}}",
               "version": {{request.Version}}
             }
             """);
 
         Assert.Equal(HttpStatusCode.NoContent, submitResponse.StatusCode);
 
-        request = await GetRequestAsync(client, requestId);
+        request = await GetRequestAsync(creatorClient, requestId);
 
         using var assignResponse = await PostJsonAsync(
-            client,
+            administratorClient,
             $"/api/requests/{requestId}/assign-manager",
             $$"""
             {
-              "managerId": "{{ManagerId}}",
-              "performedById": "{{ManagerId}}",
+              "managerId": "{{manager.UserId}}",
               "version": {{request.Version}}
             }
             """);
 
         Assert.Equal(HttpStatusCode.NoContent, assignResponse.StatusCode);
 
-        request = await GetRequestAsync(client, requestId);
+        request = await GetRequestAsync(creatorClient, requestId);
 
         using var startReviewResponse = await PostJsonAsync(
-            client,
+            managerClient,
             $"/api/requests/{requestId}/start-review",
             $$"""
             {
-              "managerId": "{{ManagerId}}",
               "version": {{request.Version}}
             }
             """);
@@ -97,14 +105,13 @@ public sealed class RequestsEndpointsTests(
             HttpStatusCode.NoContent,
             startReviewResponse.StatusCode);
 
-        request = await GetRequestAsync(client, requestId);
+        request = await GetRequestAsync(creatorClient, requestId);
 
         using var approveResponse = await PostJsonAsync(
-            client,
+            managerClient,
             $"/api/requests/{requestId}/approve",
             $$"""
             {
-              "managerId": "{{ManagerId}}",
               "decisionComment": "All requirements are met.",
               "version": {{request.Version}}
             }
@@ -112,7 +119,7 @@ public sealed class RequestsEndpointsTests(
 
         Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
 
-        request = await GetRequestAsync(client, requestId);
+        request = await GetRequestAsync(creatorClient, requestId);
 
         Assert.Equal("approved", request.Status);
         Assert.NotNull(request.DecisionAtUtc);
@@ -124,7 +131,10 @@ public sealed class RequestsEndpointsTests(
     {
         await factory.ResetDatabaseAsync();
 
-        using var client = factory.CreateClient();
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        using var client = creator.Client;
 
         var requestId = await CreateDraftAsync(
             client,
@@ -143,7 +153,6 @@ public sealed class RequestsEndpointsTests(
               "description": "A laptop is required for the development team.",
               "priority": "high",
               "dueDate": "2026-12-01T12:00:00Z",
-              "currentUserId": "{{CreatorId}}",
               "version": {{oldVersion}}
             }
             """);
@@ -161,7 +170,6 @@ public sealed class RequestsEndpointsTests(
               "description": "A laptop is required for the development team.",
               "priority": "normal",
               "dueDate": "2026-12-01T12:00:00Z",
-              "currentUserId": "{{CreatorId}}",
               "version": {{oldVersion}}
             }
             """);
@@ -176,7 +184,10 @@ public sealed class RequestsEndpointsTests(
     {
         await factory.ResetDatabaseAsync();
 
-        using var client = factory.CreateClient();
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        using var client = creator.Client;
 
         var requestId = await CreateDraftAsync(
             client,
@@ -190,7 +201,6 @@ public sealed class RequestsEndpointsTests(
             $$"""
             {
               "content": "Please attach the invoice.",
-              "authorId": "{{CreatorId}}",
               "version": {{request.Version}}
             }
             """);
@@ -209,7 +219,6 @@ public sealed class RequestsEndpointsTests(
             $$"""
             {
               "content": "Please attach the invoice and approval email.",
-              "currentUserId": "{{CreatorId}}",
               "version": {{request.Version}}
             }
             """);
@@ -227,7 +236,6 @@ public sealed class RequestsEndpointsTests(
             $"/api/requests/{requestId}/comments/{commentId}",
             $$"""
             {
-              "currentUserId": "{{CreatorId}}",
               "version": {{request.Version}}
             }
             """);
@@ -244,7 +252,10 @@ public sealed class RequestsEndpointsTests(
     {
         await factory.ResetDatabaseAsync();
 
-        using var client = factory.CreateClient();
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        using var client = creator.Client;
 
         var requestId = await CreateDraftAsync(
             client,
@@ -261,9 +272,7 @@ public sealed class RequestsEndpointsTests(
             new MediaTypeHeaderValue("text/plain");
 
         form.Add(fileContent, "file", "note.txt");
-        form.Add(
-            new StringContent(CreatorId.ToString()),
-            "uploadedById");
+
         form.Add(
             new StringContent(request.Version.ToString()),
             "version");
@@ -294,7 +303,6 @@ public sealed class RequestsEndpointsTests(
             $"/api/requests/{requestId}/attachments/{attachmentId}",
             $$"""
             {
-              "currentUserId": "{{CreatorId}}",
               "version": {{request.Version}}
             }
             """);
@@ -311,7 +319,10 @@ public sealed class RequestsEndpointsTests(
     {
         await factory.ResetDatabaseAsync();
 
-        using var client = factory.CreateClient();
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        using var client = creator.Client;
 
         await CreateDraftAsync(client, "Laptop purchase");
         await CreateDraftAsync(client, "Laptop renewal");
@@ -334,6 +345,85 @@ public sealed class RequestsEndpointsTests(
         Assert.Single(root.GetProperty("items").EnumerateArray());
     }
 
+    private async Task<TestUser> CreateAuthenticatedUserAsync(string role)
+    {
+        var client = factory.CreateClient();
+
+        var uniqueValue = Guid.NewGuid().ToString("N");
+        var email = $"user-{uniqueValue}@smartflow.test";
+
+        using var registerResponse = await PostJsonAsync(
+            client,
+            "/api/auth/register",
+            $$"""
+            {
+              "fullName": "Integration Test User",
+              "email": "{{email}}",
+              "password": "SmartFlow2026"
+            }
+            """);
+
+        Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
+
+        using var registerDocument = JsonDocument.Parse(
+            await registerResponse.Content.ReadAsStringAsync());
+
+        var userId = registerDocument.RootElement
+            .GetProperty("userId")
+            .GetGuid();
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<ApplicationUser>>();
+
+            var user = await userManager.FindByEmailAsync(email);
+
+            Assert.NotNull(user);
+
+            var currentRoles = await userManager.GetRolesAsync(user);
+
+            if (currentRoles.Count > 0)
+            {
+                var removeResult = await userManager.RemoveFromRolesAsync(
+                    user,
+                    currentRoles);
+
+                Assert.True(removeResult.Succeeded);
+            }
+
+            var addResult = await userManager.AddToRoleAsync(user, role);
+
+            Assert.True(addResult.Succeeded);
+        }
+
+        using var loginResponse = await PostJsonAsync(
+            client,
+            "/api/auth/login",
+            $$"""
+            {
+              "email": "{{email}}",
+              "password": "SmartFlow2026"
+            }
+            """);
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        using var loginDocument = JsonDocument.Parse(
+            await loginResponse.Content.ReadAsStringAsync());
+
+        var accessToken = loginDocument.RootElement
+            .GetProperty("accessToken")
+            .GetString();
+
+        Assert.False(string.IsNullOrWhiteSpace(accessToken));
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", accessToken);
+
+        return new TestUser(client, userId);
+    }
+
     private static async Task<Guid> CreateDraftAsync(
         HttpClient client,
         string title)
@@ -343,12 +433,11 @@ public sealed class RequestsEndpointsTests(
             "/api/requests",
             $$"""
             {
-                "title": "{{title}}",
-                "description": "Business request created for integration testing.",
-                "priority": "normal",
-                "dueDate": "2026-12-01T12:00:00Z",
-                "creatorId": "{{CreatorId}}"
-                }
+              "title": "{{title}}",
+              "description": "Business request created for integration testing.",
+              "priority": "normal",
+              "dueDate": "2026-12-01T12:00:00Z"
+            }
             """);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -456,6 +545,10 @@ public sealed class RequestsEndpointsTests(
 
         return client.SendAsync(request);
     }
+
+    private sealed record TestUser(
+        HttpClient Client,
+        Guid UserId);
 
     private sealed record RequestSnapshot(
         Guid Id,

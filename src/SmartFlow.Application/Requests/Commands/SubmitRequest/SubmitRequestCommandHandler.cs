@@ -1,11 +1,13 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.SubmitRequest;
 
 public sealed class SubmitRequestCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser)
     : IRequestHandler<SubmitRequestCommand, bool>
 {
     public async Task<bool> Handle(
@@ -22,7 +24,7 @@ public sealed class SubmitRequestCommandHandler(
             return false;
         }
 
-        request.Submit(command.CurrentUserId);
+        request.Submit(currentUser.UserId);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

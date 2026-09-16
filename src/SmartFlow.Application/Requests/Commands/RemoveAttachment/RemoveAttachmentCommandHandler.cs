@@ -1,5 +1,6 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 using SmartFlow.Domain.Exceptions;
 
 namespace SmartFlow.Application.Requests.Commands.RemoveAttachment;
@@ -7,7 +8,8 @@ namespace SmartFlow.Application.Requests.Commands.RemoveAttachment;
 public sealed class RemoveAttachmentCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
-    IFileStorage fileStorage)
+    IFileStorage fileStorage,
+    ICurrentUser currentUser)
     : IRequestHandler<RemoveAttachmentCommand, bool>
 {
     public async Task<bool> Handle(
@@ -30,7 +32,7 @@ public sealed class RemoveAttachmentCommandHandler(
 
         request.RemoveAttachment(
             command.AttachmentId,
-            command.CurrentUserId);
+            currentUser.UserId);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

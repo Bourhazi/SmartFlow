@@ -10,8 +10,7 @@ public sealed class RejectRequestCommandValidator
         RuleFor(command => command.RequestId)
             .NotEmpty();
 
-        RuleFor(command => command.ManagerId)
-            .NotEmpty();
+
 
         RuleFor(command => command.RejectionReason)
             .NotEmpty()

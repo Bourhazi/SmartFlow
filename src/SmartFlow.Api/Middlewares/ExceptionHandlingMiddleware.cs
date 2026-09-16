@@ -2,7 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartFlow.Domain.Exceptions;
-
+using SmartFlow.Application.Common.Exceptions;
 namespace SmartFlow.Api.Middlewares;
 
 public sealed class ExceptionHandlingMiddleware(
@@ -68,6 +68,13 @@ public sealed class ExceptionHandlingMiddleware(
                 invalidOperationException.Message),
 
 
+            ForbiddenAccessException forbiddenAccessException =>
+            CreateProblemDetails(
+                context,
+                StatusCodes.Status403Forbidden,
+                "Access denied",
+                forbiddenAccessException.Message),
+            
             DomainException domainException =>
                 CreateProblemDetails(
                     context,

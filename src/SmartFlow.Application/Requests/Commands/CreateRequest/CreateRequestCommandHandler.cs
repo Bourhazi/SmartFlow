@@ -1,12 +1,14 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Domain.Entities;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Commands.CreateRequest;
 
 public sealed class CreateRequestCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUser currentUser)
     : IRequestHandler<CreateRequestCommand, Guid>
 {
     public async Task<Guid> Handle(
@@ -18,7 +20,7 @@ public sealed class CreateRequestCommandHandler(
             command.Description,
             command.Priority,
             command.DueDate,
-            command.CreatorId);
+            currentUser.UserId);
 
         await requestRepository.AddAsync(request, cancellationToken);
 
