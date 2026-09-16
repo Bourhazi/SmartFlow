@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using SmartFlow.Application.Common.Behaviors;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application;
 
@@ -20,7 +21,7 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(
             typeof(DependencyInjection).Assembly);
-
-        return services;
+        services.AddScoped<RequestAccessGuard>();
+        return services;    
     }
 }

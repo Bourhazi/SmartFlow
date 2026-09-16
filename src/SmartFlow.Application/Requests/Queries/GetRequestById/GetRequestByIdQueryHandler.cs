@@ -1,11 +1,13 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 using SmartFlow.Domain.Entities;
 
 namespace SmartFlow.Application.Requests.Queries.GetRequestById;
 
 public sealed class GetRequestByIdQueryHandler(
-    IRequestRepository requestRepository)
+    IRequestRepository requestRepository,
+    RequestAccessGuard requestAccessGuard)
     : IRequestHandler<GetRequestByIdQuery, RequestDetailsDto?>
 {
     public async Task<RequestDetailsDto?> Handle(
@@ -16,7 +18,16 @@ public sealed class GetRequestByIdQueryHandler(
             query.RequestId,
             cancellationToken);
 
-        return request is null ? null : MapToDto(request);
+        if (request is null)
+        {
+            return null;
+        }
+
+        requestAccessGuard.EnsureCanRead(
+            request.CreatorId,
+            request.AssignedManagerId);
+
+        return MapToDto(request);
     }
 
     private static RequestDetailsDto MapToDto(Request request)

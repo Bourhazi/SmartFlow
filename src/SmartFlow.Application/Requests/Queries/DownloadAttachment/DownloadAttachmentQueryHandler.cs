@@ -1,11 +1,13 @@
 using MediatR;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Requests.Queries.DownloadAttachment;
 
 public sealed class DownloadAttachmentQueryHandler(
     IRequestRepository requestRepository,
-    IFileStorage fileStorage)
+    IFileStorage fileStorage,
+    RequestAccessGuard requestAccessGuard)
     : IRequestHandler<DownloadAttachmentQuery, AttachmentDownloadDto?>
 {
     public async Task<AttachmentDownloadDto?> Handle(
@@ -20,6 +22,10 @@ public sealed class DownloadAttachmentQueryHandler(
         {
             return null;
         }
+
+        requestAccessGuard.EnsureCanRead(
+            request.CreatorId,
+            request.AssignedManagerId);
 
         var attachment = request.Attachments
             .SingleOrDefault(item => item.Id == query.AttachmentId);
