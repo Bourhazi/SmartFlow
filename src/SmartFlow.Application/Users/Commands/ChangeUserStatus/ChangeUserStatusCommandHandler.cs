@@ -19,6 +19,13 @@ public sealed class ChangeUserStatusCommandHandler(
                 "Only an administrator can change user status.");
         }
 
+        if (command.UserId == currentUser.UserId &&
+            !command.IsActive)
+        {
+            throw new InvalidOperationException(
+                "You cannot deactivate your own administrator account.");
+        }
+
         return userAdministrationService.ChangeStatusAsync(
             command.UserId,
             command.IsActive,

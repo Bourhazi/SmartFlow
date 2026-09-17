@@ -21,7 +21,15 @@ public sealed class ChangeUserRoleCommandHandler(
 
         if (!Roles.All.Contains(command.Role))
         {
-            throw new InvalidOperationException("Role is invalid.");
+            throw new InvalidOperationException(
+                "Role is invalid.");
+        }
+
+        if (command.UserId == currentUser.UserId &&
+            command.Role != Roles.Administrateur)
+        {
+            throw new InvalidOperationException(
+                "You cannot remove your own administrator role.");
         }
 
         return userAdministrationService.ChangeRoleAsync(

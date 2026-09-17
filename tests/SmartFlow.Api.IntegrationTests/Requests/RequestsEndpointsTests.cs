@@ -345,6 +345,111 @@ public sealed class RequestsEndpointsTests(
         Assert.Single(root.GetProperty("items").EnumerateArray());
     }
 
+
+
+
+    [Fact]
+    public async Task AssignManager_WhenTargetIsCollaborateur_ReturnsBadRequest()
+    {
+        await factory.ResetDatabaseAsync();
+
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        var administrator = await CreateAuthenticatedUserAsync(
+            Roles.Administrateur);
+
+        var collaboratorTarget = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        using var creatorClient = creator.Client;
+        using var administratorClient = administrator.Client;
+        using var collaboratorClient = collaboratorTarget.Client;
+
+        var requestId = await CreateDraftAsync(
+            creatorClient,
+            "Assignment validation test");
+
+        var request = await GetRequestAsync(
+            creatorClient,
+            requestId);
+
+        using var response = await PostJsonAsync(
+            administratorClient,
+            $"/api/requests/{requestId}/assign-manager",
+            $$"""
+            {
+            "managerId": "{{collaboratorTarget.UserId}}",
+            "version": {{request.Version}}
+            }
+            """);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+
+
+
+    [Fact]
+    public async Task Manager_CannotReadRequestAssignedToAnotherManager()
+    {
+        await factory.ResetDatabaseAsync();
+
+        var creator = await CreateAuthenticatedUserAsync(
+            Roles.Collaborateur);
+
+        var administrator = await CreateAuthenticatedUserAsync(
+            Roles.Administrateur);
+
+        var assignedManager = await CreateAuthenticatedUserAsync(
+            Roles.Manager);
+
+        var otherManager = await CreateAuthenticatedUserAsync(
+            Roles.Manager);
+
+        using var creatorClient = creator.Client;
+        using var administratorClient = administrator.Client;
+        using var assignedManagerClient = assignedManager.Client;
+        using var otherManagerClient = otherManager.Client;
+
+        var requestId = await CreateDraftAsync(
+            creatorClient,
+            "Private manager request");
+
+        var request = await GetRequestAsync(
+            creatorClient,
+            requestId);
+
+        using var submitResponse = await PostJsonAsync(
+            creatorClient,
+            $"/api/requests/{requestId}/submit",
+            $$"""
+            {
+            "version": {{request.Version}}
+            }
+            """);
+
+        Assert.Equal(HttpStatusCode.NoContent, submitResponse.StatusCode);
+
+        request = await GetRequestAsync(creatorClient, requestId);
+
+        using var assignResponse = await PostJsonAsync(
+            administratorClient,
+            $"/api/requests/{requestId}/assign-manager",
+            $$"""
+            {
+            "managerId": "{{assignedManager.UserId}}",
+            "version": {{request.Version}}
+            }
+            """);
+
+        Assert.Equal(HttpStatusCode.NoContent, assignResponse.StatusCode);
+
+        using var forbiddenResponse = await otherManagerClient.GetAsync(
+            $"/api/requests/{requestId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, forbiddenResponse.StatusCode);
+    }
     private async Task<TestUser> CreateAuthenticatedUserAsync(string role)
     {
         var client = factory.CreateClient();

@@ -169,6 +169,20 @@ public sealed class UserAdministrationService(
         return await MapAsync(user);
     }
 
+
+
+    public async Task<bool> IsInRoleAsync(
+        Guid userId,
+        string role,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        return user is not null &&
+            await userManager.IsInRoleAsync(user, role);
+    }
+
+    
     private async Task<UserDto> MapAsync(ApplicationUser user)
     {
         var roles = await userManager.GetRolesAsync(user);

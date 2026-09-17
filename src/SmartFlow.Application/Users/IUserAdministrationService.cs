@@ -26,4 +26,9 @@ public interface IUserAdministrationService
         Guid userId,
         bool isActive,
         CancellationToken cancellationToken);
+
+    Task<bool> IsInRoleAsync(
+        Guid userId,
+        string role,
+        CancellationToken cancellationToken);
 }
