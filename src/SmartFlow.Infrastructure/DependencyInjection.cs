@@ -9,8 +9,10 @@ using SmartFlow.Infrastructure.Persistence.Queries;
 using Microsoft.AspNetCore.Identity;
 using SmartFlow.Application.Authentication;
 using SmartFlow.Infrastructure.Identity;
-
 using SmartFlow.Infrastructure.FileStorage;
+using SmartFlow.Application.Users;
+
+
 
 namespace SmartFlow.Infrastructure;
 
@@ -45,7 +47,8 @@ public static class DependencyInjection
         .AddRoles<IdentityRole<Guid>>()
         .AddEntityFrameworkStores<SmartFlowDbContext>();
 
-services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IUserAdministrationService, UserAdministrationService>();
 
         services.AddScoped<IRequestRepository, RequestRepository>();
 

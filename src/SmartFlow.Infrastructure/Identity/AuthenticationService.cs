@@ -72,6 +72,12 @@ public sealed class AuthenticationService(
                 "Invalid email or password.");
         }
 
+        if (!user.IsActive)
+        {
+            throw new UnauthorizedAccessException(
+                "This user account is disabled.");
+        }
+
         return await CreateAuthResultAsync(user);
     }
 
