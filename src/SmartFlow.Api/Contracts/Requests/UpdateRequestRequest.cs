@@ -7,5 +7,4 @@ public sealed record UpdateRequestRequest(
     string Description,
     RequestPriority Priority,
     DateTime? DueDate,
-    Guid CurrentUserId,
     uint Version);

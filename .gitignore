@@ -35,6 +35,10 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+
+src/SmartFlow.Api/storage/
+
+
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 bin/

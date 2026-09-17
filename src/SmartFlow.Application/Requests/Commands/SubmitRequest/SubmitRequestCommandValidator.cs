@@ -10,8 +10,6 @@ public sealed class SubmitRequestCommandValidator
         RuleFor(command => command.RequestId)
             .NotEmpty();
 
-        RuleFor(command => command.CurrentUserId)
-            .NotEmpty();
 
         RuleFor(command => command.Version)
             .Must(version => version > 0)

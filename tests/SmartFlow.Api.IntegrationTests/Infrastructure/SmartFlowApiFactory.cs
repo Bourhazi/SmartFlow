@@ -17,6 +17,11 @@ public sealed class SmartFlowApiFactory
             .WithPassword("SmartFlowTest2026")
             .Build();
 
+    private readonly string _fileStorageRoot = Path.Combine(
+        Path.GetTempPath(),
+        "SmartFlowTests",
+        Guid.NewGuid().ToString("N"));
+
     public async Task InitializeAsync()
     {
         await _postgresContainer.StartAsync();
@@ -25,6 +30,12 @@ public sealed class SmartFlowApiFactory
     async Task IAsyncLifetime.DisposeAsync()
     {
         await _postgresContainer.DisposeAsync();
+
+        if (Directory.Exists(_fileStorageRoot))
+        {
+            Directory.Delete(_fileStorageRoot, recursive: true);
+        }
+
         await base.DisposeAsync();
     }
 
@@ -47,5 +58,9 @@ public sealed class SmartFlowApiFactory
         builder.UseSetting(
             "ConnectionStrings:DefaultConnection",
             _postgresContainer.GetConnectionString());
+
+        builder.UseSetting(
+            "FileStorage:RootPath",
+            _fileStorageRoot);
     }
 }

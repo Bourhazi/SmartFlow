@@ -1,17 +1,39 @@
 using MediatR;
+using SmartFlow.Application.Common.Exceptions;
 using SmartFlow.Application.Common.Interfaces;
+using SmartFlow.Application.Common.Security;
+using SmartFlow.Application.Users;
 
 namespace SmartFlow.Application.Requests.Commands.AssignManager;
 
 public sealed class AssignManagerCommandHandler(
     IRequestRepository requestRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IUserAdministrationService userAdministrationService,
+    ICurrentUser currentUser)
     : IRequestHandler<AssignManagerCommand, bool>
 {
     public async Task<bool> Handle(
         AssignManagerCommand command,
         CancellationToken cancellationToken)
     {
+        if (!currentUser.IsInRole(Roles.Administrateur))
+        {
+            throw new ForbiddenAccessException(
+                "Only an administrator can assign a manager.");
+        }
+
+        var isManager = await userAdministrationService.IsInRoleAsync(
+            command.ManagerId,
+            Roles.Manager,
+            cancellationToken);
+
+        if (!isManager)
+        {
+            throw new InvalidOperationException(
+                "The selected user must have the Manager role.");
+        }
+
         var request = await requestRepository.GetForUpdateAsync(
             command.RequestId,
             command.Version,
@@ -24,7 +46,7 @@ public sealed class AssignManagerCommandHandler(
 
         request.AssignManager(
             command.ManagerId,
-            command.PerformedById);
+            currentUser.UserId);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

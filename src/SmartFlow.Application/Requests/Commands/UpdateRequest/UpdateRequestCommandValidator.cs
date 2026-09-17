@@ -21,9 +21,6 @@ public sealed class UpdateRequestCommandValidator
         RuleFor(command => command.Priority)
             .IsInEnum();
 
-        RuleFor(command => command.CurrentUserId)
-            .NotEmpty();
-
         RuleFor(command => command.Version)
         .Must(version => version > 0)
         .WithMessage("Version must be greater than zero.");

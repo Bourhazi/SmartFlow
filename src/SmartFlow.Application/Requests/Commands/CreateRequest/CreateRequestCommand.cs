@@ -7,5 +7,4 @@ public sealed record CreateRequestCommand(
     string Title,
     string Description,
     RequestPriority Priority,
-    DateTime? DueDate,
-    Guid CreatorId) : IRequest<Guid>;
+    DateTime? DueDate) : IRequest<Guid>;    

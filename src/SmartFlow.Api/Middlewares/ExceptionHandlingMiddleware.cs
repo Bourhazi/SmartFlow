@@ -2,7 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartFlow.Domain.Exceptions;
-
+using SmartFlow.Application.Common.Exceptions;
 namespace SmartFlow.Api.Middlewares;
 
 public sealed class ExceptionHandlingMiddleware(
@@ -41,6 +41,9 @@ public sealed class ExceptionHandlingMiddleware(
             cancellationToken: context.RequestAborted);
     }
 
+
+
+
     private static ProblemDetails CreateProblemDetails(
         HttpContext context,
         Exception exception)
@@ -49,7 +52,29 @@ public sealed class ExceptionHandlingMiddleware(
         {
             ValidationException validationException =>
                 CreateValidationProblemDetails(context, validationException),
+            UnauthorizedAccessException =>
+            CreateProblemDetails(
+                context,
+                StatusCodes.Status401Unauthorized,
+                "Authentication failed",
+                "Email or password is invalid."),
 
+
+            InvalidOperationException invalidOperationException =>
+            CreateProblemDetails(
+                context,
+                StatusCodes.Status400BadRequest,
+                "Operation failed",
+                invalidOperationException.Message),
+
+
+            ForbiddenAccessException forbiddenAccessException =>
+            CreateProblemDetails(
+                context,
+                StatusCodes.Status403Forbidden,
+                "Access denied",
+                forbiddenAccessException.Message),
+            
             DomainException domainException =>
                 CreateProblemDetails(
                     context,

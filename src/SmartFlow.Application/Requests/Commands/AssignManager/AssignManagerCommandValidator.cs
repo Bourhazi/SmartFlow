@@ -13,9 +13,6 @@ public sealed class AssignManagerCommandValidator
         RuleFor(command => command.ManagerId)
             .NotEmpty();
 
-        RuleFor(command => command.PerformedById)
-            .NotEmpty();
-
         RuleFor(command => command.Version)
             .Must(version => version > 0)
             .WithMessage("Version must be greater than zero.");
