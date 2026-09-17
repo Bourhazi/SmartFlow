@@ -70,7 +70,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IRequestReadService, RequestReadService>();
-
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         return services;
     }
 }

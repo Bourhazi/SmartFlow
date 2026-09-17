@@ -20,6 +20,8 @@ public sealed class SmartFlowDbContext(
 
     public DbSet<ApprovalHistory> ApprovalHistories => Set<ApprovalHistory>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

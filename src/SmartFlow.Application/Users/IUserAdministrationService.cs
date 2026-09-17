@@ -31,4 +31,8 @@ public interface IUserAdministrationService
         Guid userId,
         string role,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyCollection<Guid>> GetActiveUserIdsInRoleAsync(
+        string role,
+        CancellationToken cancellationToken);
 }

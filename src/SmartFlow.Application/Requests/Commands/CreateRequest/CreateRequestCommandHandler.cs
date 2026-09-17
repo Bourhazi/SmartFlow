@@ -2,13 +2,19 @@ using MediatR;
 using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Domain.Entities;
 using SmartFlow.Application.Common.Security;
+using SmartFlow.Application.Users;
+
+using SmartFlow.Domain.Enums;
+
 
 namespace SmartFlow.Application.Requests.Commands.CreateRequest;
 
 public sealed class CreateRequestCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    INotificationRepository notificationRepository,
+    IUserAdministrationService userAdministrationService)
     : IRequestHandler<CreateRequestCommand, Guid>
 {
     public async Task<Guid> Handle(
@@ -23,6 +29,23 @@ public sealed class CreateRequestCommandHandler(
             currentUser.UserId);
 
         await requestRepository.AddAsync(request, cancellationToken);
+
+        var administrators =
+        await userAdministrationService.GetActiveUserIdsInRoleAsync(
+            Roles.Administrateur,
+            cancellationToken);
+
+        foreach (var administratorId in administrators)
+        {
+            await notificationRepository.AddAsync(
+                Notification.Create(
+                    "New request created",
+                    $"A new request titled '{request.Title}' was created.",
+                    NotificationType.NewRequest,
+                    administratorId,
+                    request.Id),
+                cancellationToken);
+        }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

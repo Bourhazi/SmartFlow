@@ -3,6 +3,8 @@ using SmartFlow.Application.Common.Exceptions;
 using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Application.Common.Security;
 using SmartFlow.Application.Users;
+using SmartFlow.Domain.Entities;
+using SmartFlow.Domain.Enums;
 
 namespace SmartFlow.Application.Requests.Commands.AssignManager;
 
@@ -10,7 +12,8 @@ public sealed class AssignManagerCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
     IUserAdministrationService userAdministrationService,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    INotificationRepository notificationRepository)
     : IRequestHandler<AssignManagerCommand, bool>
 {
     public async Task<bool> Handle(
@@ -48,8 +51,17 @@ public sealed class AssignManagerCommandHandler(
             command.ManagerId,
             currentUser.UserId);
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await notificationRepository.AddAsync(
+        Notification.Create(
+            "Request assigned",
+            $"You were assigned to the request '{request.Title}'.",
+            NotificationType.Assignment,
+            command.ManagerId,
+            request.Id),
+        cancellationToken);
 
-        return true;
-    }
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
 }

@@ -1,13 +1,16 @@
     using MediatR;
 using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Application.Common.Security;
+using SmartFlow.Domain.Entities;
+using SmartFlow.Domain.Enums;
 
 namespace SmartFlow.Application.Requests.Commands.ApproveRequest;
 
 public sealed class ApproveRequestCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    INotificationRepository notificationRepository)
     : IRequestHandler<ApproveRequestCommand, bool>
 {
     public async Task<bool> Handle(
@@ -27,6 +30,16 @@ public sealed class ApproveRequestCommandHandler(
         request.Approve(
             currentUser.UserId,
             command.DecisionComment);
+
+        
+        await notificationRepository.AddAsync(
+        Notification.Create(
+            "Request approved",
+            $"Your request '{request.Title}' was approved.",
+            NotificationType.Approval,
+            request.CreatorId,
+            request.Id),
+        cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

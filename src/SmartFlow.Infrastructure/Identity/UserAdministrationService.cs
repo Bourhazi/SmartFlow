@@ -182,7 +182,18 @@ public sealed class UserAdministrationService(
             await userManager.IsInRoleAsync(user, role);
     }
 
-    
+    public async Task<IReadOnlyCollection<Guid>> GetActiveUserIdsInRoleAsync(
+        string role,
+        CancellationToken cancellationToken)
+    {
+        var usersInRole = await userManager.GetUsersInRoleAsync(role);
+
+        return usersInRole
+            .Where(user => user.IsActive)
+            .Select(user => user.Id)
+            .ToArray();
+    }
+
     private async Task<UserDto> MapAsync(ApplicationUser user)
     {
         var roles = await userManager.GetRolesAsync(user);
