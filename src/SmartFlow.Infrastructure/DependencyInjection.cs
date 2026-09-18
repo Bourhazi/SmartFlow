@@ -12,6 +12,7 @@ using SmartFlow.Infrastructure.Identity;
 using SmartFlow.Infrastructure.FileStorage;
 using SmartFlow.Application.Users;
 using SmartFlow.Infrastructure.Auditing;
+using SmartFlow.Infrastructure.Notifications;
 
 
 
@@ -77,6 +78,11 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogger, AuditLogger>();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<
+            IDeadlineNotificationService,
+            DeadlineNotificationService>();
+
+        services.AddHostedService<DeadlineNotificationWorker>();
         return services;
     }
 }

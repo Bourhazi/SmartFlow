@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Domain.Entities;
+using SmartFlow.Domain.Enums;
 
 namespace SmartFlow.Infrastructure.Persistence.Repositories;
 
@@ -37,6 +38,23 @@ public sealed class NotificationRepository(
             notification =>
                 notification.Id == notificationId &&
                 notification.UserId == userId,
+            cancellationToken);
+    }
+
+
+    public Task<bool> ExistsAsync(
+        Guid userId,
+        Guid requestId,
+        NotificationType type,
+        string title,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.Notifications.AnyAsync(
+            notification =>
+                notification.UserId == userId &&
+                notification.RequestId == requestId &&
+                notification.Type == type &&
+                notification.Title == title,
             cancellationToken);
     }
 }
