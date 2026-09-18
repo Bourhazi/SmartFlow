@@ -22,6 +22,8 @@ public sealed class SmartFlowDbContext(
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -9,7 +9,8 @@ public sealed class RejectRequestCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
-    INotificationRepository notificationRepository)
+    INotificationRepository notificationRepository,
+    IAuditLogger auditLogger)
     : IRequestHandler<RejectRequestCommand, bool>
 {
     public async Task<bool> Handle(
@@ -29,6 +30,21 @@ public sealed class RejectRequestCommandHandler(
         request.Reject(
             currentUser.UserId,
             command.RejectionReason);
+
+        
+        await auditLogger.WriteAsync(
+        "RequestRejected",
+        "Request",
+        request.Id,
+        new { Status = "UnderReview" },
+        new
+        {
+            Status = "Rejected",
+            command.RejectionReason
+        },
+        cancellationToken);
+
+        
         await notificationRepository.AddAsync(
         Notification.Create(
             "Request rejected",

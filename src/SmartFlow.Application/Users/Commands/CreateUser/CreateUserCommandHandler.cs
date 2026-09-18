@@ -1,15 +1,17 @@
 using MediatR;
 using SmartFlow.Application.Common.Exceptions;
+using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Application.Common.Security;
 
 namespace SmartFlow.Application.Users.Commands.CreateUser;
 
 public sealed class CreateUserCommandHandler(
     IUserAdministrationService userAdministrationService,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IAuditLogger auditLogger)
     : IRequestHandler<CreateUserCommand, UserDto>
 {
-    public Task<UserDto> Handle(
+    public async Task<UserDto> Handle(
         CreateUserCommand command,
         CancellationToken cancellationToken)
     {
@@ -19,11 +21,27 @@ public sealed class CreateUserCommandHandler(
                 "Only an administrator can create users.");
         }
 
-        return userAdministrationService.CreateAsync(
+        var user = await userAdministrationService.CreateAsync(
             command.FullName,
             command.Email,
             command.Password,
             command.Role,
             cancellationToken);
+
+        await auditLogger.WriteAsync(
+            "UserCreated",
+            "User",
+            user.Id,
+            null,
+            new
+            {
+                user.FullName,
+                user.Email,
+                user.Roles,
+                user.IsActive
+            },
+            cancellationToken);
+
+        return user;
     }
 }

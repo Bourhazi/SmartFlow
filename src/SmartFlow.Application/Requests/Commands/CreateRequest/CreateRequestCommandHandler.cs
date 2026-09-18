@@ -14,7 +14,8 @@ public sealed class CreateRequestCommandHandler(
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
     INotificationRepository notificationRepository,
-    IUserAdministrationService userAdministrationService)
+    IUserAdministrationService userAdministrationService,
+    IAuditLogger auditLogger)
     : IRequestHandler<CreateRequestCommand, Guid>
 {
     public async Task<Guid> Handle(
@@ -47,6 +48,21 @@ public sealed class CreateRequestCommandHandler(
                 cancellationToken);
         }
 
+        await auditLogger.WriteAsync(
+        "RequestCreated",
+        "Request",
+        request.Id,
+        null,
+        new
+        {
+            request.Title,
+            request.Description,
+            request.Priority,
+            request.DueDate,
+            request.CreatorId,
+            request.Status
+        },
+        cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return request.Id;

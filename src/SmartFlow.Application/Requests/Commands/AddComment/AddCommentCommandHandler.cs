@@ -9,7 +9,8 @@ public sealed class AddCommentCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork, 
     ICurrentUser currentUser,
-    INotificationRepository notificationRepository)
+    INotificationRepository notificationRepository,
+    IAuditLogger auditLogger)
     : IRequestHandler<AddCommentCommand, Guid?>
 {
     public async Task<Guid?> Handle(
@@ -30,6 +31,20 @@ public sealed class AddCommentCommandHandler(
             command.Content,
             currentUser.UserId);
 
+            
+        await auditLogger.WriteAsync(
+        "CommentAdded",
+        "Comment",
+        comment.Id,
+        null,
+        new
+        {
+            comment.RequestId,
+            comment.AuthorId,
+            comment.Content
+        },
+        cancellationToken);
+    
         var recipients = new[]
     {
         request.CreatorId,

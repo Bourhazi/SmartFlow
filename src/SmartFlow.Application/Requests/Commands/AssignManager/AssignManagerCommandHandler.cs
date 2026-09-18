@@ -13,7 +13,8 @@ public sealed class AssignManagerCommandHandler(
     IUnitOfWork unitOfWork,
     IUserAdministrationService userAdministrationService,
     ICurrentUser currentUser,
-    INotificationRepository notificationRepository)
+    INotificationRepository notificationRepository,
+    IAuditLogger auditLogger)
     : IRequestHandler<AssignManagerCommand, bool>
 {
     public async Task<bool> Handle(
@@ -50,6 +51,14 @@ public sealed class AssignManagerCommandHandler(
         request.AssignManager(
             command.ManagerId,
             currentUser.UserId);
+
+        await auditLogger.WriteAsync(
+        "ManagerAssigned",
+        "Request",
+        request.Id,
+        new { AssignedManagerId = request.AssignedManagerId },
+        new { AssignedManagerId = command.ManagerId },
+        cancellationToken);
 
         await notificationRepository.AddAsync(
         Notification.Create(

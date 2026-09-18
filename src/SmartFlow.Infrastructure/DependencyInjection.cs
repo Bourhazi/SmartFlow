@@ -11,6 +11,7 @@ using SmartFlow.Application.Authentication;
 using SmartFlow.Infrastructure.Identity;
 using SmartFlow.Infrastructure.FileStorage;
 using SmartFlow.Application.Users;
+using SmartFlow.Infrastructure.Auditing;
 
 
 
@@ -71,6 +72,9 @@ public static class DependencyInjection
 
         services.AddScoped<IRequestReadService, RequestReadService>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IAuditLogger, AuditLogger>();
         return services;
     }
 }

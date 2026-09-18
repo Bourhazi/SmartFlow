@@ -7,7 +7,8 @@ namespace SmartFlow.Application.Requests.Commands.UpdateRequest;
 public sealed class UpdateRequestCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IAuditLogger auditLogger)
     : IRequestHandler<UpdateRequestCommand, bool>
 {
     public async Task<bool> Handle(
@@ -23,6 +24,13 @@ public sealed class UpdateRequestCommandHandler(
         {
             return false;
         }
+        var oldValues = new
+        {
+            request.Title,
+            request.Description,
+            request.Priority,
+            request.DueDate
+        };
 
         request.Update(
             command.Title,
@@ -31,6 +39,19 @@ public sealed class UpdateRequestCommandHandler(
             command.DueDate,
             currentUser.UserId);
 
+        await auditLogger.WriteAsync(
+        "RequestUpdated",
+        "Request",
+        request.Id,
+        oldValues,
+        new
+        {
+            request.Title,
+            request.Description,
+            request.Priority,
+            request.DueDate
+        },
+        cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return true;

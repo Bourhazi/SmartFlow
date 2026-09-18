@@ -10,7 +10,8 @@ public sealed class ApproveRequestCommandHandler(
     IRequestRepository requestRepository,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
-    INotificationRepository notificationRepository)
+    INotificationRepository notificationRepository,
+    IAuditLogger auditLogger)
     : IRequestHandler<ApproveRequestCommand, bool>
 {
     public async Task<bool> Handle(
@@ -30,6 +31,14 @@ public sealed class ApproveRequestCommandHandler(
         request.Approve(
             currentUser.UserId,
             command.DecisionComment);
+        
+        await auditLogger.WriteAsync(
+        "RequestApproved",
+        "Request",
+        request.Id,
+        new { Status = "UnderReview" },
+        new { Status = "Approved", command.DecisionComment },
+        cancellationToken);
 
         
         await notificationRepository.AddAsync(
