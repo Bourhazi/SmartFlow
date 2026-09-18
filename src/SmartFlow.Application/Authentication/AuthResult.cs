@@ -6,4 +6,6 @@ public sealed record AuthResult(
     string Email,
     IReadOnlyCollection<string> Roles,
     string AccessToken,
-    DateTime ExpiresAtUtc);
+    DateTime ExpiresAtUtc,
+    string RefreshToken,
+    DateTime RefreshTokenExpiresAtUtc);

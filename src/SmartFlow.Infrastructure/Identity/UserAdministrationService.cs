@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SmartFlow.Application.Common.Interfaces;
 using SmartFlow.Application.Users;
+
 
 namespace SmartFlow.Infrastructure.Identity;
 
 public sealed class UserAdministrationService(
-    UserManager<ApplicationUser> userManager)
+    UserManager<ApplicationUser> userManager,
+    IRefreshTokenRepository refreshTokenRepository,
+    IUnitOfWork unitOfWork)
     : IUserAdministrationService
 {
     public async Task<IReadOnlyCollection<UserDto>> GetAllAsync(
@@ -156,7 +160,16 @@ public sealed class UserAdministrationService(
 
         user.IsActive = isActive;
 
+        if (!isActive)
+        {
+            await refreshTokenRepository.RevokeAllForUserAsync(
+                user.Id,
+                cancellationToken);
+        }
+
         var updateResult = await userManager.UpdateAsync(user);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         if (!updateResult.Succeeded)
         {

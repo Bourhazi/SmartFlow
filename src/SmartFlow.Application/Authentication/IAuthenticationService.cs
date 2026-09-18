@@ -12,4 +12,12 @@ public interface IAuthenticationService
         string email,
         string password,
         CancellationToken cancellationToken);
+
+    Task<AuthResult> RefreshAsync(
+        string refreshToken,
+        CancellationToken cancellationToken);
+
+    Task LogoutAsync(
+        string refreshToken,
+        CancellationToken cancellationToken);
 }
