@@ -13,6 +13,7 @@ using SmartFlow.Infrastructure.FileStorage;
 using SmartFlow.Application.Users;
 using SmartFlow.Infrastructure.Auditing;
 using SmartFlow.Infrastructure.Notifications;
+using SmartFlow.Application.Dashboard;
 
 
 
@@ -83,6 +84,7 @@ public static class DependencyInjection
             DeadlineNotificationService>();
 
         services.AddHostedService<DeadlineNotificationWorker>();
+        services.AddScoped<IDashboardReadService, DashboardReadService>();
         return services;
     }
 }
