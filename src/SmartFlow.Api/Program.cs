@@ -10,8 +10,11 @@ using Microsoft.IdentityModel.Tokens;
 using SmartFlow.Application.Common.Models;
 using SmartFlow.Api.Identity;
 using SmartFlow.Application.Common.Security;
+using QuestPDF.Infrastructure;
 
 
+
+QuestPDF.Settings.License = LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 

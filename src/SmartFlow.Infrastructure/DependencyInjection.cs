@@ -14,6 +14,8 @@ using SmartFlow.Application.Users;
 using SmartFlow.Infrastructure.Auditing;
 using SmartFlow.Infrastructure.Notifications;
 using SmartFlow.Application.Dashboard;
+using SmartFlow.Application.Reports;
+using SmartFlow.Infrastructure.Reports;
 
 
 
@@ -85,6 +87,7 @@ public static class DependencyInjection
 
         services.AddHostedService<DeadlineNotificationWorker>();
         services.AddScoped<IDashboardReadService, DashboardReadService>();
+        services.AddScoped<IRequestReportService, RequestReportService>();
         return services;
     }
 }
